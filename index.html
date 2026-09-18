@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MPI BK — Manajemen Stres & Kecemasan Akademik</title>
+<style>
+  :root{
+    --font-scale: 1.0;
+    --c-primary: #4F46E5;
+    --c-primary-dark: #3730A3;
+    --c-secondary: #0D9488;
+    --c-secondary-light: #5EEAD4;
+    --c-accent: #F59E0B;
+    --c-accent-dark: #D97706;
+    --c-success: #16A34A;
+    --c-danger: #DC2626;
+    --c-text: #1E2A44;
+    --c-text-soft: #47547A;
+    --c-white: #FFFFFF;
+    --c-card: #FFFFFF;
+    --font-head: 'Segoe UI', 'Trebuchet MS', 'Nunito Sans', Verdana, sans-serif;
+    --font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:100%; height:100%; overflow:hidden;
+    font-family:var(--font-body);
+    background:#f0f9ff;
+  }
+  body{
+    background-image: url('bg-ruang-kelas_jpg.jpeg');
+    background-size: cover;
+    background-position:center;
+    background-attachment: fixed;
+    background-repeat:no-repeat;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh;
+  }
+  #app-shell{
+    width:100vw; height:100vh;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding: clamp(6px, 1.2vh, 16px);
+  }
+  #stage-16-9{
+    position:relative;
+    width:min(100vw, 177.78vh);
+    height:min(100vh, 56.25vw);
+    background: transparent;
+    border:none;
+    box-shadow:none;
+    border-radius:0;
+    aspect-ratio:16/9;
+    overflow:hidden;
+    font-size: calc(15px * var(--font-scale, 1.0));
+  }
+  #bg-overlay{
+    position:absolute; inset:0;
+    background: rgba(240, 249, 255, 0.82);
+    z-index:0;
+  }
+  .page{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+    padding: clamp(10px, 1.8vh, 18px) clamp(16px, 2.6vw, 36px);
+    overflow:hidden;
+    z-index:1;
+  }
+  .page.active{display:flex;}
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .page.active > *{ animation: fadeIn .35s ease; }
+
+  /* ===== TOP NAV (shown on all pages except cover) ===== */
+  .topnav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 0 0 clamp(6px,1vh,10px) 0;
+    flex-shrink:0;
+  }
+  .nav-left, .nav-right{ display:flex; align-items:center; gap: clamp(6px, 0.9vh, 10px); }
+  .nav-btn{
+    width:clamp(40px, 5.2vh, 48px); height:clamp(40px, 5.2vh, 48px);
+    border-radius:50%;
+    border:none; cursor:pointer;
+    background: linear-gradient(145deg, var(--c-primary), var(--c-primary-dark));
+    color:#fff; font-size:clamp(18px, 2.3vh, 23px);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 8px rgba(79,70,229,.35);
+    transition: transform .15s ease;
+  }
+  .nav-btn:hover{ transform: translateY(-2px) scale(1.05); }
+  .nav-btn:active{ transform: translateY(0) scale(.96); }
+  .nav-btn.ghost{
+    background:#fff; color:var(--c-primary); border:2px solid var(--c-primary);
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  .title-bar{
+    font-family:var(--font-head);
+    font-size:clamp(16px, 2.2vh, 22px);
+    font-weight:800; color:#fff;
+    background: linear-gradient(120deg, var(--c-primary), var(--c-secondary));
+    padding: clamp(6px,0.9vh,10px) clamp(18px,2vw,26px);
+    border-radius:999px;
+    box-shadow:0 4px 10px rgba(79,70,229,.25);
+  }
+  .zoom-ctrl{
+    display:flex; align-items:center; gap:4px;
+    background:#fff; border-radius:999px; padding:4px 8px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  .zoom-ctrl button{
+    width:clamp(26px,3.4vh,32px); height:clamp(26px,3.4vh,32px);
+    border-radius:50%; border:none; cursor:pointer;
+    background:#EEF2FF; color:var(--c-primary); font-weight:800;
+    font-size:clamp(13px,1.7vh,16px);
+  }
+  .zoom-ctrl span{ font-size:clamp(11px,1.4vh,13px); font-weight:700; color:var(--c-text-soft); width:32px; text-align:center;}
+
+  /* ===== BUTTONS ===== */
+  .btn{
+    font-family:var(--font-body);
+    cursor:pointer; border:none; border-radius:999px;
+    font-weight:800; letter-spacing:.2px;
+    font-size:clamp(13.5px, 1.8vh, 17px);
+    padding:10px 22px;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn:active{ transform:translateY(0) scale(.97); }
+  .btn-primary{ background:linear-gradient(120deg,var(--c-primary),var(--c-primary-dark)); color:#fff; box-shadow:0 4px 10px rgba(79,70,229,.3);}
+  .btn-accent{ background:linear-gradient(120deg,var(--c-accent),var(--c-accent-dark)); color:#fff; box-shadow:0 4px 10px rgba(245,158,11,.35);}
+  .btn-outline{ background:#fff; color:var(--c-primary); border:2px solid var(--c-primary);}
+  .btn-success{ background:linear-gradient(120deg,#22C55E,var(--c-success)); color:#fff;}
+  .btn-danger{ background:linear-gradient(120deg,#F87171,var(--c-danger)); color:#fff;}
+
+  /* ===================== PAGE 1 — COVER ===================== */
+  #page-cover{ align-items:center; justify-content:space-between; }
+  .cover-header{
+    display:flex; align-items:center; justify-content:center; gap: clamp(10px,1.4vw,18px);
+    padding-top: clamp(4px,0.8vh,10px);
+  }
+  .school-pill{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.92);
+    border-radius:999px;
+    padding: 6px 20px 6px 8px;
+    box-shadow:0 4px 14px rgba(30,42,68,.15);
+  }
+  .school-pill img{
+    height:clamp(50px, 6.8vh, 68px); width:auto; display:block;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.15));
+  }
+  .school-pill .school-text{ text-align:left; line-height:1.2; }
+  .school-pill .school-text b{ font-size:clamp(13px,1.7vh,16px); color:var(--c-text); display:block; }
+  .school-pill .school-text span{ font-size:clamp(10.5px,1.3vh,12.5px); color:var(--c-text-soft); font-weight:600; }
+  .badge-row{ display:flex; gap:8px; }
+  .badge-pill{
+    background:#fff; border-radius:999px; padding:6px 14px;
+    font-size:clamp(10.5px,1.3vh,12.5px); font-weight:800; color:var(--c-secondary);
+    box-shadow:0 3px 8px rgba(30,42,68,.12);
+    border:1.5px solid var(--c-secondary-light);
+  }
+  .cover-center{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:clamp(8px,1.4vh,16px);
+  }
+  .cover-eyebrow{
+    font-size:clamp(12px,1.6vh,15px); font-weight:800; color:var(--c-primary-dark);
+    background:rgba(255,255,255,.85); padding:5px 16px; border-radius:999px;
+  }
+  .cover-title{
+    font-family:var(--font-head);
+    font-size:clamp(2.8rem, 6.8vw, 5.2rem);
+    font-weight:900; line-height:1.02;
+    color:var(--c-primary-dark);
+    text-shadow:
+      -4px -4px 0 #fff, 4px -4px 0 #fff, -4px 4px 0 #fff, 4px 4px 0 #fff,
+      0 8px 18px rgba(30,42,68,.25);
+  }
+  .cover-subtitle{
+    font-size:clamp(1.4rem, 3.2vw, 2.6rem);
+    font-weight:800; color:var(--c-secondary);
+    text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
+  }
+  .cover-desc{
+    max-width:62%; font-size:clamp(13px,1.7vh,16px); font-weight:600; color:var(--c-text-soft);
+    background:rgba(255,255,255,.7); padding:6px 20px; border-radius:14px;
+  }
+  .play-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:4px; }
+  .play-btn{
+    width:clamp(60px, 8.5vh, 80px); height:clamp(60px, 8.5vh, 80px);
+    border-radius:50%; border:none; cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #FBBF24, var(--c-accent-dark));
+    color:#fff; font-size:clamp(26px, 3.6vh, 36px);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 0 rgba(245,158,11,.6);
+    animation: pulse-glow 1.8s infinite;
+  }
+  @keyframes pulse-glow{
+    0%{ box-shadow:0 0 0 0 rgba(245,158,11,.55); }
+    70%{ box-shadow:0 0 0 22px rgba(245,158,11,0); }
+    100%{ box-shadow:0 0 0 0 rgba(245,158,11,0); }
+  }
+  .play-label{ font-size:clamp(24px, 3.8vh, 36px); font-weight:900; color:var(--c-primary-dark); letter-spacing:1px; }
+  .cover-footer{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:clamp(4px,0.8vh,10px);
+  }
+  .teacher-strip{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.85); border-radius:999px; padding:6px 16px;
+    font-size:clamp(11px,1.4vh,13px); font-weight:700; color:var(--c-text);
+  }
+  .teacher-strip .dot{ width:6px; height:6px; border-radius:50%; background:var(--c-secondary); }
+  .motto{ font-size:clamp(11px,1.4vh,13px); font-weight:700; color:var(--c-primary-dark); font-style:italic; }
+
+  /* ===================== PAGE 2 — MENU ===================== */
+  .menu-grid{
+    flex:1; display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(2,1fr);
+    gap: clamp(10px, 1.6vh, 18px); padding-top:4px;
+  }
+  .menu-card{
+    background:rgba(255,255,255,.94);
+    border-radius:20px;
+    padding: clamp(10px,1.6vh,16px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    text-align:center; cursor:pointer; border:none;
+    box-shadow:0 6px 16px rgba(30,42,68,.14), 0 1px 0 rgba(255,255,255,.6) inset;
+    transition: transform .18s ease, box-shadow .18s ease;
+    position:relative; overflow:hidden;
+  }
+  .menu-card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:6px;
+    background:linear-gradient(90deg, var(--c-primary), var(--c-secondary));
+  }
+  .menu-card:hover{ transform:translateY(-5px); box-shadow:0 14px 26px rgba(30,42,68,.22); }
+  .menu-icon-box{
+    width:clamp(66px, 9vh, 88px); height:clamp(66px, 9vh, 88px);
+    border-radius:22px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(34px, 4.8vh, 46px);
+    box-shadow:0 6px 14px rgba(0,0,0,.15) inset, 0 4px 10px rgba(0,0,0,.12);
+  }
+  .ib-1{ background:linear-gradient(145deg,#818CF8,#4F46E5); }
+  .ib-2{ background:linear-gradient(145deg,#5EEAD4,#0D9488); }
+  .ib-3{ background:linear-gradient(145deg,#FCA5A5,#DC2626); }
+  .ib-4{ background:linear-gradient(145deg,#FCD34D,#D97706); }
+  .ib-5{ background:linear-gradient(145deg,#C4B5FD,#7C3AED); }
+  .ib-6{ background:linear-gradient(145deg,#93C5FD,#2563EB); }
+  .menu-card h3{ font-size:clamp(15px,2vh,20px); font-weight:800; color:var(--c-text); }
+  .menu-card p{ font-size:clamp(11px,1.4vh,13px); font-weight:600; color:var(--c-text-soft); line-height:1.3; }
+
+  /* ===================== PAGE 3 — TUJUAN ===================== */
+  #page-tujuan{ align-items:center; }
+  .tp-card{
+    flex:1; width:100%; max-width:920px; margin:0 auto;
+    background:rgba(255,255,255,.95); border-radius:26px;
+    padding: clamp(16px,2.6vh,30px) clamp(24px,3vw,44px);
+    display:flex; flex-direction:column; justify-content:center; gap:clamp(10px,1.6vh,16px);
+    box-shadow:0 10px 28px rgba(30,42,68,.16);
+  }
+  .tp-head{ text-align:center; }
+  .tp-head .tp-kicker{ font-size:clamp(12px,1.5vh,14px); font-weight:800; color:var(--c-secondary); }
+  .tp-head h2{ font-family:var(--font-head); font-size:clamp(22px,3vh,30px); font-weight:900; color:var(--c-primary-dark); }
+  .tp-list{ display:flex; flex-direction:column; gap:clamp(8px,1.3vh,12px); }
+  .tp-item{
+    display:flex; align-items:flex-start; gap:12px;
+    background:#F5F7FF; border-radius:16px; padding:clamp(10px,1.5vh,14px) clamp(14px,1.8vw,18px);
+    border-left:5px solid var(--c-primary);
+  }
+  .tp-item .tp-num{
+    flex-shrink:0; width:clamp(30px,4vh,36px); height:clamp(30px,4vh,36px); border-radius:50%;
+    background:linear-gradient(145deg,var(--c-primary),var(--c-primary-dark)); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:clamp(13px,1.7vh,16px);
+  }
+  .tp-item p{ font-size:clamp(13.5px,1.7vh,16px); font-weight:600; color:var(--c-text); line-height:1.45; }
+
+  /* ===================== PAGE 4 — MATERI ===================== */
+  .materi-grid{
+    flex:1; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr);
+    gap:clamp(8px,1.3vh,14px); padding-top:2px;
+  }
+  .materi-card{
+    background:rgba(255,255,255,.95); border-radius:18px; overflow:hidden;
+    display:flex; flex-direction:column;
+    box-shadow:0 5px 14px rgba(30,42,68,.13);
+  }
+  .materi-visual{
+    height:42%; display:flex; align-items:center; justify-content:center;
+    font-size:clamp(30px,4.2vh,40px);
+    color:#fff;
+  }
+  .mv-1{ background:linear-gradient(135deg,#818CF8,#4F46E5); }
+  .mv-2{ background:linear-gradient(135deg,#FCA5A5,#DC2626); }
+  .mv-3{ background:linear-gradient(135deg,#FCD34D,#D97706); }
+  .mv-4{ background:linear-gradient(135deg,#5EEAD4,#0D9488); }
+  .mv-5{ background:linear-gradient(135deg,#C4B5FD,#7C3AED); }
+  .mv-6{ background:linear-gradient(135deg,#93C5FD,#2563EB); }
+  .materi-body{ flex:1; padding:clamp(8px,1.2vh,12px) clamp(10px,1.3vw,14px); display:flex; flex-direction:column; gap:4px; overflow:hidden;}
+  .materi-body h4{ font-size:clamp(13px,1.7vh,16px); font-weight:800; color:var(--c-text); }
+  .materi-body p{ font-size:clamp(10.5px,1.35vh,12.5px); font-weight:600; color:var(--c-text-soft); line-height:1.35; overflow:hidden; }
+
+  /* ===================== PAGE 5 — SIMULASI ===================== */
+  #page-sim{ gap:clamp(6px,1vh,10px); }
+  .sim-layout{ flex:1; display:grid; grid-template-columns: 1.55fr 1fr; gap:clamp(10px,1.5vw,18px); min-height:0; }
+  .sim-panel{
+    background:rgba(255,255,255,.95); border-radius:20px; padding:clamp(10px,1.5vh,16px);
+    box-shadow:0 6px 16px rgba(30,42,68,.13);
+    display:flex; flex-direction:column; min-height:0;
+  }
+  .sim-panel h3{ font-size:clamp(13px,1.7vh,16px); font-weight:800; color:var(--c-primary-dark); margin-bottom:4px; text-align:center;}
+  #svg-sim{ width:100%; height:clamp(260px, 38vh, 420px); flex:1; }
+  .sim-controls{ display:flex; flex-direction:column; gap:clamp(8px,1.2vh,12px); justify-content:center; flex:1; min-height:0; overflow:hidden;}
+  .slider-row label{ font-size:clamp(12px,1.5vh,14px); font-weight:800; color:var(--c-text); display:block; margin-bottom:4px;}
+  .slider-row input[type=range]{ width:100%; accent-color:var(--c-primary); height:6px; }
+  .sim-zone-badge{
+    align-self:center; padding:6px 18px; border-radius:999px; font-weight:900;
+    font-size:clamp(13px,1.7vh,16px); color:#fff; transition:background .25s ease;
+  }
+  .sim-tip{
+    background:#F5F7FF; border-radius:12px; padding:clamp(8px,1.2vh,12px);
+    font-size:clamp(11.5px,1.45vh,13.5px); font-weight:600; color:var(--c-text); line-height:1.4;
+    border-left:4px solid var(--c-secondary);
+    min-height:0; overflow:auto;
+  }
+  .sim-toggle-row{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center;}
+  .sim-toggle-row button{
+    font-size:clamp(10.5px,1.35vh,12.5px); font-weight:800; padding:6px 12px; border-radius:999px;
+    border:2px solid var(--c-primary); background:#fff; color:var(--c-primary); cursor:pointer;
+  }
+  .sim-toggle-row button.active{ background:var(--c-primary); color:#fff; }
+
+  /* ===================== PAGE 6 — EVALUASI ===================== */
+  #page-eval{ gap:clamp(6px,1vh,8px); }
+  .eval-head{ display:flex; align-items:center; justify-content:space-between; }
+  .eval-progress{ display:flex; gap:6px; }
+  .eval-dot{ width:clamp(8px,1.1vh,11px); height:clamp(8px,1.1vh,11px); border-radius:50%; background:#CBD5E1; }
+  .eval-dot.on{ background:var(--c-accent); }
+  .eval-score-chip{
+    background:linear-gradient(120deg,var(--c-primary),var(--c-secondary)); color:#fff; font-weight:900;
+    padding:5px 14px; border-radius:999px; font-size:clamp(11.5px,1.5vh,14px);
+  }
+  .eval-body{ flex:1; min-height:0; display:flex; flex-direction:column; }
+  .round{ display:none; flex:1; min-height:0; flex-direction:column; }
+  .round.active{ display:flex; }
+  .round-title{ text-align:center; font-family:var(--font-head); font-weight:900; color:var(--c-primary-dark); font-size:clamp(15px,2vh,19px); margin-bottom:clamp(6px,1vh,10px);}
+
+  /* MC round */
+  .q-card{
+    background:rgba(255,255,255,.95); border-radius:18px; padding:clamp(12px,1.8vh,18px) clamp(16px,2vw,24px);
+    flex:1; display:flex; flex-direction:column; justify-content:center; gap:clamp(8px,1.3vh,14px);
+    box-shadow:0 6px 16px rgba(30,42,68,.13);
+  }
+  .q-text{ font-size:clamp(14px,1.85vh,17px); font-weight:800; color:var(--c-text); text-align:center; }
+  .q-options{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(8px,1.2vh,12px); }
+  .q-opt{
+    background:#F5F7FF; border:2px solid #E0E7FF; border-radius:14px; cursor:pointer;
+    padding:10px 22px; font-size:clamp(13.5px,1.8vh,17px); font-weight:700; color:var(--c-text);
+    text-align:left; display:flex; align-items:center; gap:10px;
+  }
+  .q-opt:hover{ border-color:var(--c-primary); }
+  .q-opt.correct{ background:#DCFCE7; border-color:var(--c-success); color:#166534; }
+  .q-opt.wrong{ background:#FEE2E2; border-color:var(--c-danger); color:#991B1B; }
+  .q-nav{ display:flex; justify-content:center; margin-top:6px; }
+
+  /* Matching round */
+  .match-wrap{ flex:1; display:flex; gap:4%; position:relative; min-height:0; align-items:center; }
+  .match-col{ flex:1; display:flex; flex-direction:column; gap:clamp(8px,1.3vh,14px); }
+  .match-item{
+    background:rgba(255,255,255,.95); border:2.5px solid var(--c-primary); border-radius:14px;
+    padding:10px 16px; font-size:clamp(12px,1.6vh,14.5px); font-weight:700; color:var(--c-text);
+    cursor:pointer; text-align:center; box-shadow:0 4px 10px rgba(30,42,68,.1);
+  }
+  .match-item.term{ border-color:var(--c-secondary); }
+  .match-item.selected{ background:#FEF3C7; border-color:var(--c-accent); }
+  .match-item.matched{ background:#DCFCE7; border-color:var(--c-success); cursor:default; }
+  #match-svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  /* True/False round */
+  .tf-card{
+    background:rgba(255,255,255,.95); border-radius:18px; padding:clamp(14px,2vh,20px) clamp(20px,2.4vw,30px);
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(12px,1.8vh,18px);
+    box-shadow:0 6px 16px rgba(30,42,68,.13); text-align:center;
+  }
+  .tf-statement{ font-size:clamp(14.5px,1.95vh,18px); font-weight:800; color:var(--c-text); max-width:85%; line-height:1.4;}
+  .tf-buttons{ display:flex; gap:clamp(14px,2vw,26px); }
+  .tf-btn{
+    width:clamp(90px,12vh,120px); height:clamp(58px,8vh,72px); border-radius:16px; border:none; cursor:pointer;
+    font-size:clamp(16px,2.1vh,22px); font-weight:900; color:#fff;
+  }
+
+  /* Recap round */
+  .recap-wrap{ flex:1; display:flex; align-items:center; justify-content:center; gap:clamp(20px,3vw,50px); }
+  .trophy{ font-size:clamp(44px,6vh,60px); filter:drop-shadow(0 4px 10px rgba(245,158,11,.5)); animation:trophy-bounce 1.4s ease infinite; }
+  @keyframes trophy-bounce{ 0%,100%{transform:translateY(0) rotate(-4deg);} 50%{transform:translateY(-10px) rotate(4deg);} }
+  .recap-score{ text-align:center; }
+  .recap-score .big-num{ font-family:var(--font-head); font-size:clamp(3rem,7vh,4.6rem); font-weight:900; color:var(--c-primary-dark); line-height:1;}
+  .recap-score .big-label{ font-size:clamp(12px,1.5vh,14px); font-weight:700; color:var(--c-text-soft); }
+  .recap-breakdown{ display:flex; flex-direction:column; gap:8px; }
+  .recap-row{ display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.9); border-radius:12px; padding:8px 16px; min-width:220px; }
+  .recap-row .rr-label{ flex:1; font-size:clamp(12px,1.5vh,14px); font-weight:700; color:var(--c-text); }
+  .recap-row .rr-val{ font-size:clamp(13px,1.6vh,15px); font-weight:900; color:var(--c-secondary); }
+
+  /* ===================== PAGE 7 — PROFIL GURU ===================== */
+  #page-profil{ align-items:center; justify-content:center; }
+  .profil-card{
+    background:rgba(255,255,255,.95); border-radius:28px; padding:clamp(18px,2.6vh,30px) clamp(30px,3.6vw,50px);
+    display:flex; align-items:center; gap:clamp(20px,3vw,44px);
+    box-shadow:0 10px 26px rgba(30,42,68,.16); max-width:900px;
+  }
+  .profil-photo{
+    width:clamp(130px,18vh,175px); height:clamp(130px,18vh,175px); border-radius:50%;
+    padding:5px; flex-shrink:0;
+    background:conic-gradient(from 180deg, var(--c-primary), var(--c-secondary), var(--c-accent), var(--c-primary));
+    box-shadow:0 8px 18px rgba(30,42,68,.28);
+  }
+  .profil-photo img{ width:100%; height:100%; border-radius:50%; object-fit:cover; border:4px solid #fff; display:block; }
+  .profil-text h2{ font-family:var(--font-head); font-size:clamp(20px,2.8vh,26px); font-weight:900; color:var(--c-primary-dark); }
+  .profil-text .role{ font-size:clamp(13px,1.7vh,16px); font-weight:700; color:var(--c-secondary); margin-top:2px;}
+  .profil-text .school{ font-size:clamp(12px,1.5vh,14px); font-weight:600; color:var(--c-text-soft); margin-top:2px;}
+  .profil-quote{
+    margin-top:clamp(10px,1.5vh,16px); background:#F5F7FF; border-left:4px solid var(--c-accent);
+    padding:10px 16px; border-radius:10px; font-size:clamp(12px,1.55vh,14.5px); font-weight:600; font-style:italic; color:var(--c-text);
+  }
+
+  /* Insight popup */
+  .insight-overlay{
+    position:absolute; inset:0; background:rgba(30,42,68,.55); z-index:20;
+    display:none; align-items:center; justify-content:center;
+  }
+  .insight-overlay.show{ display:flex; }
+  .insight-box{
+    background:#fff; border-radius:22px; padding:clamp(18px,2.6vh,28px) clamp(24px,3vw,36px);
+    max-width:60%; text-align:center; position:relative; box-shadow:0 14px 36px rgba(0,0,0,.3);
+  }
+  .insight-box .ic{ font-size:clamp(36px,5vh,48px); margin-bottom:8px; }
+  .insight-box h4{ font-size:clamp(15px,2vh,19px); font-weight:900; color:var(--c-primary-dark); margin-bottom:6px;}
+  .insight-box p{ font-size:clamp(12.5px,1.6vh,14.5px); font-weight:600; color:var(--c-text); line-height:1.4;}
+  .insight-box .close-x{
+    position:absolute; top:10px; right:14px; cursor:pointer; font-size:20px; font-weight:900; color:var(--c-text-soft);
+    background:none; border:none;
+  }
+  .insight-next{ margin-top:12px; }
+
+  ::selection{ background:var(--c-accent); color:#fff; }
+</style>
+</head>
+<body>
+<div id="app-shell">
+<div id="stage-16-9">
+  <div id="bg-overlay"></div>
+
+  <!-- ============ PAGE 1: COVER ============ -->
+  <section class="page active" id="page-cover">
+    <div class="cover-header">
+      <div class="school-pill">
+        <img src="LOGO_SMP-removebg-preview.png" alt="Logo Sekolah" onerror="this.style.display='none'">
+        <div class="school-text">
+          <b id="school-name-cover">SMPN 1 Paciran</b>
+          <span>Lamongan • Kurikulum Merdeka</span>
+        </div>
+      </div>
+      <div class="badge-row">
+        <span class="badge-pill">Kurikulum Merdeka</span>
+        <span class="badge-pill">Fase D</span>
+      </div>
+    </div>
+
+    <div class="cover-center">
+      <span class="cover-eyebrow">Layanan Bimbingan & Konseling</span>
+      <h1 class="cover-title">Kecemasan<br>Akademik</h1>
+      <p class="cover-subtitle">Kenali, Pahami, Kelola</p>
+      <p class="cover-desc">Media Pembelajaran Interaktif untuk membantumu memahami dan mengelola tekanan belajar dengan cara yang sehat.</p>
+      <div class="play-wrap">
+        <button class="play-btn" onclick="playClick(); goPage('menu');" aria-label="Mulai">▶</button>
+        <span class="play-label">MULAI</span>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <div class="teacher-strip"><span class="dot"></span> Disusun oleh <b id="teacher-name-cover">&nbsp;Lailatul Mufidah, M.Pd</b></div>
+      <div class="motto">"Cemas boleh, menyerah jangan."</div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 2: MENU ============ -->
+  <section class="page" id="page-menu">
+    <div class="topnav">
+      <div class="nav-left">
+        <button class="nav-btn" onclick="playClick(); goPage('cover');" aria-label="Beranda">🏠</button>
+        <span class="title-bar">Menu Utama</span>
+      </div>
+      <div class="nav-right">
+        <div class="zoom-ctrl">
+          <button onclick="changeFont(-0.05)">A-</button>
+          <span id="font-val">100%</span>
+          <button onclick="changeFont(0.05)">A+</button>
+        </div>
+        <button class="nav-btn ghost" id="sound-toggle" onclick="toggleSound()" aria-label="Suara">🔊</button>
+      </div>
+    </div>
+    <div class="menu-grid">
+      <button class="menu-card" onclick="playClick(); goPage('tujuan');">
+        <div class="menu-icon-box ib-1">🎯</div>
+        <h3>Tujuan Pembelajaran</h3>
+        <p>Capaian & indikator yang ingin kamu kuasai</p>
+      </button>
+      <button class="menu-card" onclick="playClick(); goPage('materi');">
+        <div class="menu-icon-box ib-2">📖</div>
+        <h3>Materi Pembelajaran</h3>
+        <p>Eksplorasi konsep kecemasan akademik</p>
+      </button>
+      <button class="menu-card" onclick="playClick(); goPage('sim'); initSim();">
+        <div class="menu-icon-box ib-3">🕹️</div>
+        <h3>Simulasi Interaktif</h3>
+        <p>Termometer cemas & siklus pikiran-perasaan</p>
+      </button>
+      <button class="menu-card" onclick="playClick(); goPage('eval'); resetEval();">
+        <div class="menu-icon-box ib-4">📝</div>
+        <h3>Evaluasi</h3>
+        <p>Uji pemahamanmu — total 100 poin</p>
+      </button>
+      <button class="menu-card" onclick="playClick(); goPage('profil');">
+        <div class="menu-icon-box ib-5">👨‍🏫</div>
+        <h3>Profil Guru</h3>
+        <p>Kenali fasilitator BK-mu</p>
+      </button>
+      <button class="menu-card" onclick="playClick(); openInsight();">
+        <div class="menu-icon-box ib-6">💡</div>
+        <h3>Wawasan & Fakta</h3>
+        <p>Fakta menarik seputar kecemasan akademik</p>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 3: TUJUAN ============ -->
+  <section class="page" id="page-tujuan">
+    <div class="topnav">
+      <div class="nav-left">
+        <button class="nav-btn" onclick="playClick(); goPage('menu');" aria-label="Kembali">⬅</button>
+        <span class="title-bar">Tujuan Pembelajaran</span>
+      </div>
+      <div class="nav-right">
+        <button class="nav-btn" onclick="playClick(); goPage('cover');" aria-label="Beranda">🏠</button>
+      </div>
+    </div>
+    <div class="tp-card">
+      <div class="tp-head">
+        <span class="tp-kicker">BK • Fase D • Kecemasan Akademik</span>
+        <h2>Setelah mengikuti pembelajaran ini, kamu mampu:</h2>
+      </div>
+      <div class="tp-list">
+        <div class="tp-item">
+          <div class="tp-num">1</div>
+          <p>Memahami konsep dasar terkait manajemen stres dan kecemasan akademik.</p>
+        </div>
+        <div class="tp-item">
+          <div class="tp-num">2</div>
+          <p>Mengidentifikasi faktor penyebab dan dampak dari kecemasan akademik dalam kehidupan sehari-hari.</p>
+        </div>
+        <div class="tp-item">
+          <div class="tp-num">3</div>
+          <p>Merumuskan alternatif solusi dan strategi coping yang relevan dengan kondisi diri sendiri.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 4: MATERI ============ -->
+  <section class="page" id="page-materi">
+    <div class="topnav">
+      <div class="nav-left">
+        <button class="nav-btn" onclick="playClick(); goPage('menu');" aria-label="Kembali">⬅</button>
+        <span class="title-bar">Materi Pembelajaran</span>
+      </div>
+      <div class="nav-right">
+        <button class="nav-btn" onclick="playClick(); goPage('cover');" aria-label="Beranda">🏠</button>
+      </div>
+    </div>
+    <div class="materi-grid">
+      <div class="materi-card">
+        <div class="materi-visual mv-1">🧠</div>
+        <div class="materi-body">
+          <h4>Apa itu Kecemasan Akademik?</h4>
+          <p>Rasa khawatir, tegang, atau takut berlebihan terkait tugas, ujian, atau tuntutan sekolah yang muncul sebelum, saat, atau setelah situasi belajar.</p>
+        </div>
+      </div>
+      <div class="materi-card">
+        <div class="materi-visual mv-2">💓</div>
+        <div class="materi-body">
+          <h4>Gejala yang Muncul</h4>
+          <p>Fisik: jantung berdebar, keringat dingin. Kognitif: sulit fokus, pikiran negatif. Emosi: gelisah, mudah marah. Perilaku: menghindari tugas.</p>
+        </div>
+      </div>
+      <div class="materi-card">
+        <div class="materi-visual mv-3">🧩</div>
+        <div class="materi-body">
+          <h4>Faktor Penyebab</h4>
+          <p>Tuntutan nilai tinggi, perbandingan sosial, manajemen waktu buruk, kurang tidur, serta tekanan dari orang tua atau lingkungan.</p>
+        </div>
+      </div>
+      <div class="materi-card">
+        <div class="materi-visual mv-4">📉</div>
+        <div class="materi-body">
+          <h4>Dampak jika Dibiarkan</h4>
+          <p>Prestasi menurun, kepercayaan diri berkurang, sulit tidur, hingga menjauh dari teman dan aktivitas yang disukai.</p>
+        </div>
+      </div>
+      <div class="materi-card">
+        <div class="materi-visual mv-5">🌬️</div>
+        <div class="materi-body">
+          <h4>Strategi Mengelola Stres</h4>
+          <p>Teknik napas dalam, manajemen waktu, olahraga ringan, journaling, serta mengubah pikiran negatif menjadi lebih realistis.</p>
+        </div>
+      </div>
+      <div class="materi-card">
+        <div class="materi-visual mv-6">🤝</div>
+        <div class="materi-body">
+          <h4>Kapan Mencari Bantuan</h4>
+          <p>Saat kecemasan mengganggu aktivitas sehari-hari, segera bicara dengan guru BK, orang tua, atau orang dewasa yang dipercaya.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 5: SIMULASI ============ -->
+  <section class="page" id="page-sim">
+    <div class="topnav">
+      <div class="nav-left">
+        <button class="nav-btn" onclick="playClick(); goPage('menu');" aria-label="Kembali">⬅</button>
+        <span class="title-bar">Simulasi Interaktif</span>
+      </div>
+      <div class="nav-right">
+        <button class="nav-btn" onclick="playClick(); goPage('cover');" aria-label="Beranda">🏠</button>
+      </div>
+    </div>
+    <div class="sim-layout">
+      <div class="sim-panel">
+        <h3>Siklus Pikiran — Perasaan — Tindakan</h3>
+        <svg id="svg-sim" viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="sim-panel">
+        <h3>🌡️ Termometer Kecemasan</h3>
+        <div class="sim-controls">
+          <div class="slider-row">
+            <label>Geser untuk mensimulasikan level kecemasan:</label>
+            <input type="range" id="anx-slider" min="0" max="100" value="20" oninput="updateSim(this.value)">
+          </div>
+          <div id="zone-badge" class="sim-zone-badge">NYAMAN</div>
+          <div id="sim-tip" class="sim-tip">Kondisi tenang — cocok untuk belajar dengan fokus penuh.</div>
+          <div class="sim-toggle-row">
+            <button onclick="highlightNode('pikiran')">💭 Pikiran</button>
+            <button onclick="highlightNode('perasaan')">❤️ Perasaan</button>
+            <button onclick="highlightNode('tindakan')">🏃 Tindakan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 6: EVALUASI ============ -->
+  <section class="page" id="page-eval">
+    <div class="topnav">
+      <div class="nav-left">
+        <button class="nav-btn" onclick="playClick(); goPage('menu');" aria-label="Kembali">⬅</button>
+        <span class="title-bar">Evaluasi</span>
+      </div>
+      <div class="nav-right">
+        <span class="eval-score-chip">Skor: <span id="score-live">0</span>/100</span>
+        <button class="nav-btn" onclick="playClick(); goPage('cover');" aria-label="Beranda">🏠</button>
+      </div>
+    </div>
+    <div class="eval-head">
+      <div class="eval-progress">
+        <div class="eval-dot" id="dot-a">A</div>
+        <div class="eval-dot" id="dot-b">B</div>
+        <div class="eval-dot" id="dot-c">C</div>
+        <div class="eval-dot" id="dot-d">D</div>
+      </div>
+    </div>
+    <div class="eval-body">
+
+      <!-- Babak A -->
+      <div class="round active" id="round-a">
+        <div class="round-title">Babak A — Pilihan Ganda (30 Poin)</div>
+        <div class="q-card">
+          <div class="q-text" id="mc-question"></div>
+          <div class="q-options" id="mc-options"></div>
+        </div>
+        <div class="q-nav"><button class="btn btn-outline" id="mc-next-btn" style="display:none" onclick="mcNext()">Lanjut ▶</button></div>
+      </div>
+
+      <!-- Babak B -->
+      <div class="round" id="round-b">
+        <div class="round-title">Babak B — Menjodohkan (40 Poin)</div>
+        <div class="match-wrap">
+          <svg id="match-svg"></svg>
+          <div class="match-col" id="match-terms"></div>
+          <div class="match-col" id="match-defs"></div>
+        </div>
+        <div class="q-nav"><button class="btn btn-outline" id="b-next-btn" style="display:none" onclick="goRound('c')">Lanjut ▶</button></div>
+      </div>
+
+      <!-- Babak C -->
+      <div class="round" id="round-c">
+        <div class="round-title">Babak C — Benar / Salah (30 Poin)</div>
+        <div class="tf-card">
+          <div class="tf-statement" id="tf-statement"></div>
+          <div class="tf-buttons">
+            <button class="tf-btn btn-success" onclick="answerTF(true)">✓ BENAR</button>
+            <button class="tf-btn btn-danger" onclick="answerTF(false)">✗ SALAH</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Babak D -->
+      <div class="round" id="round-d">
+        <div class="round-title">Rekapitulasi Hasil</div>
+        <div class="recap-wrap">
+          <div class="trophy">🏆</div>
+          <div class="recap-score">
+            <div class="big-num" id="recap-total">0</div>
+            <div class="big-label">dari 100 poin</div>
+          </div>
+          <div class="recap-breakdown">
+            <div class="recap-row"><span class="rr-label">Babak A — Pilihan Ganda</span><span class="rr-val" id="recap-a">0/30</span></div>
+            <div class="recap-row"><span class="rr-label">Babak B — Menjodohkan</span><span class="rr-val" id="recap-b">0/40</span></div>
+            <div class="recap-row"><span class="rr-label">Babak C — Benar/Salah</span><span class="rr-val" id="recap-c">0/30</span></div>
+            <div class="recap-row" style="margin-top:6px;"><button class="btn btn-primary" onclick="resetEval()">🔄 Ulangi Evaluasi</button></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ PAGE 7: PROFIL GURU ============ -->
+  <section class="page" id="page-profil">
+    <div class="topnav">
+      <div class="nav-left">
+        <button class="nav-btn" onclick="playClick(); goPage('menu');" aria-label="Kembali">⬅</button>
+        <span class="title-bar">Profil Guru</span>
+      </div>
+      <div class="nav-right">
+        <button class="nav-btn" onclick="playClick(); goPage('cover');" aria-label="Beranda">🏠</button>
+      </div>
+    </div>
+    <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+      <div class="profil-card">
+        <div class="profil-photo">
+          <img src="foto_profil.png" alt="Foto Guru" onerror="this.style.display='none'">
+        </div>
+        <div class="profil-text">
+          <h2>Lailatul Mufidah, M.Pd</h2>
+          <div class="role">Guru Bimbingan & Konseling</div>
+          <div class="school">SMPN 1 Paciran, Lamongan</div>
+          <div class="profil-quote">"Setiap siswa berhak merasa aman untuk bercerita. Kecemasan bukan tanda kelemahan, tapi sinyal bahwa kamu peduli pada hasil belajarmu — mari kita kelola bersama."</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Insight popup overlay -->
+  <div class="insight-overlay" id="insight-overlay">
+    <div class="insight-box">
+      <button class="close-x" onclick="closeInsight()">✕</button>
+      <div class="ic" id="insight-icon">💡</div>
+      <h4 id="insight-title">Tahukah kamu?</h4>
+      <p id="insight-text"></p>
+      <button class="btn btn-accent insight-next" onclick="nextInsight()">Fakta Lain ▶</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+/* ================= AUDIO (Web Audio API — sintetis, 100% offline) ================= */
+let audioCtx = null;
+let soundOn = true;
+function ensureCtx(){ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } return audioCtx; }
+function playClick(){
+  if(!soundOn) return;
+  const ctx = ensureCtx();
+  const o = ctx.createOscillator(); const g = ctx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(450, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime+0.09);
+  g.gain.setValueAtTime(0.15, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.12);
+  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.13);
+}
+function playCorrect(){
+  if(!soundOn) return;
+  const ctx = ensureCtx();
+  [523.25,659.25,783.99].forEach((f,i)=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.001, ctx.currentTime+i*0.09);
+    g.gain.linearRampToValueAtTime(0.16, ctx.currentTime+i*0.09+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+i*0.09+0.35);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(ctx.currentTime+i*0.09); o.stop(ctx.currentTime+i*0.09+0.36);
+  });
+}
+function playWrong(){
+  if(!soundOn) return;
+  const ctx = ensureCtx();
+  const o = ctx.createOscillator(); const g = ctx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(220, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(110, ctx.currentTime+0.3);
+  g.gain.setValueAtTime(0.13, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.32);
+  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.33);
+}
+function toggleSound(){
+  soundOn = !soundOn;
+  document.getElementById('sound-toggle').textContent = soundOn ? '🔊' : '🔇';
+  if(soundOn) playClick();
+}
+
+/* ================= FONT SCALE / ACCESSIBILITY ================= */
+let fontScale = 1.0;
+function changeFont(delta){
+  fontScale = Math.min(1.3, Math.max(0.8, fontScale + delta));
+  document.getElementById('stage-16-9').style.setProperty('--font-scale', fontScale.toFixed(2));
+  document.getElementById('font-val').textContent = Math.round(fontScale*100)+'%';
+  playClick();
+}
+
+/* ================= NAVIGATION ================= */
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+}
+
+/* ================= INSIGHT POPUP ================= */
+const insights = [
+  {icon:'🧘', title:'Tahukah kamu?', text:'Kecemasan ringan sebelum ujian itu wajar — justru membantu otak lebih waspada dan fokus, asal tidak berlebihan.'},
+  {icon:'⏰', title:'Fakta Manajemen Waktu', text:'Siswa yang membagi tugas besar menjadi langkah-langkah kecil terbukti lebih jarang mengalami kecemasan menumpuk (prokrastinasi).'},
+  {icon:'🫁', title:'Teknik Napas 4-7-8', text:'Tarik napas 4 detik, tahan 7 detik, embuskan 8 detik. Teknik ini dapat menurunkan detak jantung dalam hitungan menit.'},
+  {icon:'💬', title:'Berani Bercerita', text:'Siswa yang terbuka pada guru BK atau orang tua tentang kecemasannya cenderung menemukan solusi lebih cepat daripada yang memendamnya sendiri.'},
+  {icon:'😴', title:'Tidur & Fokus Belajar', text:'Kurang tidur meningkatkan hormon stres (kortisol) hingga 30%, membuat materi pelajaran lebih sulit diingat esok harinya.'}
+];
+let insightIdx = 0;
+function openInsight(){
+  insightIdx = Math.floor(Math.random()*insights.length);
+  renderInsight();
+  document.getElementById('insight-overlay').classList.add('show');
+}
+function nextInsight(){
+  playClick();
+  insightIdx = (insightIdx+1) % insights.length;
+  renderInsight();
+}
+function renderInsight(){
+  const d = insights[insightIdx];
+  document.getElementById('insight-icon').textContent = d.icon;
+  document.getElementById('insight-title').textContent = d.title;
+  document.getElementById('insight-text').textContent = d.text;
+}
+function closeInsight(){ playClick(); document.getElementById('insight-overlay').classList.remove('show'); }
+
+/* ================= SIMULASI: SVG Siklus Pikiran-Perasaan-Tindakan + Termometer ================= */
+function svgNS(tag){ return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+
+function initSim(){
+  const svg = document.getElementById('svg-sim');
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox','0 0 640 380');
+
+  const defs = svgNS('defs');
+  defs.innerHTML = `
+    <linearGradient id="gradP" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="gradF" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FCA5A5"/><stop offset="100%" stop-color="#DC2626"/>
+    </linearGradient>
+    <linearGradient id="gradT" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5EEAD4"/><stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>`;
+  svg.appendChild(defs);
+
+  const nodes = [
+    {id:'pikiran', cx:320, cy:80, fill:'url(#gradP)', label:'PIKIRAN', sub:'"Aku pasti gagal"', emoji:'💭'},
+    {id:'perasaan', cx:150, cy:290, fill:'url(#gradF)', label:'PERASAAN', sub:'Cemas, gelisah', emoji:'❤️'},
+    {id:'tindakan', cx:490, cy:290, fill:'url(#gradT)', label:'TINDAKAN', sub:'Menunda tugas', emoji:'🏃'}
+  ];
+
+  // connecting animated dashed lines (triangle)
+  const pairs = [[0,1],[1,2],[2,0]];
+  pairs.forEach(([a,b])=>{
+    const n1=nodes[a], n2=nodes[b];
+    const line = svgNS('path');
+    line.setAttribute('d', `M ${n1.cx} ${n1.cy} L ${n2.cx} ${n2.cy}`);
+    line.setAttribute('stroke', '#94A3B8');
+    line.setAttribute('stroke-width', '5');
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke-dasharray', '10 8');
+    line.setAttribute('class','flow-line');
+    line.style.animation = 'dashflow 1.6s linear infinite';
+    svg.appendChild(line);
+  });
+
+  const styleTag = svgNS('style');
+  styleTag.textContent = `
+    @keyframes dashflow{ to{ stroke-dashoffset:-36; } }
+    .node-circle{ transition: transform .25s ease; transform-origin:center; }
+    .node-glow{ animation: nodepulse 2.4s ease-in-out infinite; }
+    @keyframes nodepulse{ 0%,100%{opacity:.35;} 50%{opacity:.75;} }
+  `;
+  svg.appendChild(styleTag);
+
+  nodes.forEach(n=>{
+    const g = svgNS('g');
+    g.setAttribute('id','node-'+n.id);
+    g.style.cursor='pointer';
+    g.addEventListener('click', ()=>{ playClick(); highlightNode(n.id); });
+
+    const glow = svgNS('circle');
+    glow.setAttribute('cx', n.cx); glow.setAttribute('cy', n.cy); glow.setAttribute('r', 46);
+    glow.setAttribute('fill', n.fill); glow.setAttribute('class','node-glow');
+    g.appendChild(glow);
+
+    const circle = svgNS('circle');
+    circle.setAttribute('cx', n.cx); circle.setAttribute('cy', n.cy); circle.setAttribute('r', 36);
+    circle.setAttribute('fill', n.fill); circle.setAttribute('class','node-circle');
+    circle.setAttribute('stroke','#fff'); circle.setAttribute('stroke-width','4');
+    g.appendChild(circle);
+
+    const emoji = svgNS('text');
+    emoji.setAttribute('x', n.cx); emoji.setAttribute('y', n.cy+8);
+    emoji.setAttribute('text-anchor','middle'); emoji.setAttribute('font-size','26');
+    emoji.textContent = n.emoji;
+    g.appendChild(emoji);
+
+    // label pill badge
+    const labelY = n.cy + 58;
+    const rect = svgNS('rect');
+    rect.setAttribute('x', n.cx-52); rect.setAttribute('y', labelY-16);
+    rect.setAttribute('width', 104); rect.setAttribute('height', 24);
+    rect.setAttribute('rx', 6); rect.setAttribute('fill', 'white');
+    rect.setAttribute('stroke', '#334155'); rect.setAttribute('stroke-width','1.5');
+    g.appendChild(rect);
+    const text = svgNS('text');
+    text.setAttribute('x', n.cx); text.setAttribute('y', labelY);
+    text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','13'); text.setAttribute('font-weight','800');
+    text.setAttribute('fill','#1E2A44');
+    text.textContent = n.label;
+    g.appendChild(text);
+
+    const rect2 = svgNS('rect');
+    rect2.setAttribute('x', n.cx-60); rect2.setAttribute('y', labelY+6);
+    rect2.setAttribute('width', 120); rect2.setAttribute('height', 20);
+    rect2.setAttribute('rx', 6); rect2.setAttribute('fill', 'white');
+    rect2.setAttribute('stroke', '#94A3B8'); rect2.setAttribute('stroke-width','1.2');
+    g.appendChild(rect2);
+    const text2 = svgNS('text');
+    text2.setAttribute('x', n.cx); text2.setAttribute('y', labelY+20);
+    text2.setAttribute('text-anchor','middle'); text2.setAttribute('font-size','11'); text2.setAttribute('font-weight','700');
+    text2.setAttribute('fill','#47547A');
+    text2.textContent = n.sub;
+    g.appendChild(text2);
+
+    svg.appendChild(g);
+  });
+
+  // title banner
+  const title = svgNS('text');
+  title.setAttribute('x', 320); title.setAttribute('y', 30);
+  title.setAttribute('text-anchor','middle'); title.setAttribute('font-size','14'); title.setAttribute('font-weight','800');
+  title.setAttribute('fill','#4F46E5');
+  title.textContent = 'Klik setiap simpul untuk memahami siklusnya';
+  svg.appendChild(title);
+
+  updateSim(document.getElementById('anx-slider').value);
+}
+
+function highlightNode(id){
+  ['pikiran','perasaan','tindakan'].forEach(n=>{
+    const el = document.getElementById('node-'+n);
+    if(el) el.querySelector('.node-circle').style.transform = (n===id) ? 'scale(1.18)' : 'scale(1)';
+  });
+  const tips = {
+    pikiran: 'Pikiran negatif seperti "aku pasti gagal" memicu perasaan cemas — cobalah menantang pikiran itu dengan bukti nyata.',
+    perasaan: 'Perasaan cemas adalah sinyal tubuh, bukan musuh. Sadari dan beri nama perasaanmu agar lebih mudah dikelola.',
+    tindakan: 'Menghindari tugas justru memperbesar rasa cemas di kemudian hari. Mulailah dengan langkah kecil yang mudah dilakukan.'
+  };
+  document.getElementById('sim-tip').textContent = tips[id];
+}
+
+const zoneData = [
+  {max:24, label:'NYAMAN', color:'#16A34A', tip:'Kondisi tenang — cocok untuk belajar dengan fokus penuh.'},
+  {max:49, label:'WASPADA', color:'#0D9488', tip:'Mulai muncul tekanan ringan. Atur napas dan buat daftar prioritas tugas.'},
+  {max:74, label:'CEMAS', color:'#D97706', tip:'Detak jantung meningkat, sulit fokus. Coba teknik napas 4-7-8 dan istirahat sejenak.'},
+  {max:100, label:'PANIK', color:'#DC2626', tip:'Kecemasan tinggi — segera bicara dengan guru BK, orang tua, atau orang dewasa yang kamu percaya.'}
+];
+function updateSim(val){
+  val = Number(val);
+  const zone = zoneData.find(z=>val<=z.max);
+  const badge = document.getElementById('zone-badge');
+  badge.textContent = zone.label;
+  badge.style.background = zone.color;
+  document.getElementById('sim-tip').textContent = zone.tip;
+  const svg = document.getElementById('svg-sim');
+  if(svg){
+    document.querySelectorAll('.node-glow').forEach(g=>{ g.style.opacity = 0.3 + (val/100)*0.5; });
+  }
+}
+
+/* ================= EVALUASI ================= */
+const mcQuestions = [
+  {
+    q:'Kecemasan akademik paling tepat digambarkan sebagai...',
+    opts:['Rasa khawatir/tegang berlebihan terkait tugas atau ujian sekolah','Perasaan senang saat mendapat nilai bagus','Kondisi tubuh yang selalu sehat dan bugar','Kebiasaan belajar setiap malam tanpa henti'],
+    correct:0
+  },
+  {
+    q:'Berikut ini yang termasuk gejala FISIK dari kecemasan akademik adalah...',
+    opts:['Selalu ingin bermain game','Jantung berdebar dan keringat dingin sebelum ujian','Rajin mengerjakan PR lebih awal','Senang berdiskusi dengan teman sekelas'],
+    correct:1
+  },
+  {
+    q:'Strategi yang PALING tepat untuk mengelola kecemasan akademik adalah...',
+    opts:['Menghindari semua tugas yang membuat cemas','Memendam perasaan sendiri tanpa bercerita','Berlatih teknik pernapasan dan mengatur waktu belajar','Membandingkan nilai dengan teman terus-menerus'],
+    correct:2
+  }
+];
+const matchPairs = [
+  {term:'Kecemasan Akademik', def:'Perasaan khawatir berlebihan terkait tugas/ujian sekolah'},
+  {term:'Distorsi Kognitif', def:'Pola pikir negatif yang tidak realistis tentang kemampuan diri'},
+  {term:'Manajemen Waktu', def:'Strategi mengatur jadwal agar tugas tidak menumpuk'},
+  {term:'Teknik Relaksasi', def:'Cara menenangkan tubuh dan pikiran, misalnya napas dalam'}
+];
+const tfStatements = [
+  {s:'Kecemasan akademik dalam kadar wajar dapat memotivasi siswa untuk belajar lebih baik.', a:true},
+  {s:'Menghindari tugas sekolah adalah cara terbaik untuk mengatasi kecemasan akademik.', a:false},
+  {s:'Bercerita kepada guru BK atau orang tua dapat membantu meringankan kecemasan akademik.', a:true}
+];
+
+let mcIndex=0, mcScore=0, mcAnswered=false;
+let matchScore=0, matchSelectedTerm=null, matchSolved=0, matchOrderTerm=[], matchOrderDef=[];
+let tfIndex=0, tfScore=0;
+
+function resetEval(){
+  mcIndex=0; mcScore=0;
+  matchScore=0; matchSelectedTerm=null; matchSolved=0;
+  tfIndex=0; tfScore=0;
+  updateScoreLive();
+  goRound('a');
+  renderMC();
+}
+function updateScoreLive(){
+  document.getElementById('score-live').textContent = mcScore + matchScore + tfScore;
+}
+function goRound(name){
+  document.querySelectorAll('.round').forEach(r=>r.classList.remove('active'));
+  document.getElementById('round-'+name).classList.add('active');
+  ['a','b','c','d'].forEach(k=>document.getElementById('dot-'+k).classList.toggle('on', k<=name));
+  if(name==='b') renderMatch();
+  if(name==='c') renderTF();
+  if(name==='d') renderRecap();
+}
+
+function renderMC(){
+  mcAnswered=false;
+  const q = mcQuestions[mcIndex];
+  document.getElementById('mc-question').textContent = (mcIndex+1)+'. '+q.q;
+  const wrap = document.getElementById('mc-options');
+  wrap.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className='q-opt';
+    btn.innerHTML = '<span>'+String.fromCharCode(65+i)+'.</span><span>'+opt+'</span>';
+    btn.onclick = ()=>answerMC(i, btn);
+    wrap.appendChild(btn);
+  });
+  document.getElementById('mc-next-btn').style.display='none';
+}
+function answerMC(i, btn){
+  if(mcAnswered) return;
+  mcAnswered=true;
+  const q = mcQuestions[mcIndex];
+  const opts = document.querySelectorAll('#mc-options .q-opt');
+  if(i===q.correct){
+    btn.classList.add('correct'); playCorrect(); mcScore += 10;
+  } else {
+    btn.classList.add('wrong'); playWrong();
+    opts[q.correct].classList.add('correct');
+  }
+  updateScoreLive();
+  document.getElementById('mc-next-btn').style.display='inline-block';
+}
+function mcNext(){
+  playClick();
+  mcIndex++;
+  if(mcIndex < mcQuestions.length){ renderMC(); }
+  else{ goRound('b'); }
+}
+
+function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
+function renderMatch(){
+  matchSelectedTerm=null; matchSolved=0;
+  const termsWrap = document.getElementById('match-terms');
+  const defsWrap = document.getElementById('match-defs');
+  termsWrap.innerHTML=''; defsWrap.innerHTML='';
+  document.getElementById('match-svg').innerHTML='';
+  document.getElementById('b-next-btn').style.display='none';
+
+  matchOrderTerm = shuffle(matchPairs.map((p,i)=>i));
+  matchOrderDef = shuffle(matchPairs.map((p,i)=>i));
+
+  matchOrderTerm.forEach(idx=>{
+    const el = document.createElement('div');
+    el.className='match-item term';
+    el.textContent = matchPairs[idx].term;
+    el.dataset.idx = idx;
+    el.onclick = ()=>selectTerm(idx, el);
+    termsWrap.appendChild(el);
+  });
+  matchOrderDef.forEach(idx=>{
+    const el = document.createElement('div');
+    el.className='match-item def';
+    el.textContent = matchPairs[idx].def;
+    el.dataset.idx = idx;
+    el.onclick = ()=>selectDef(idx, el);
+    defsWrap.appendChild(el);
+  });
+}
+function selectTerm(idx, el){
+  if(el.classList.contains('matched')) return;
+  playClick();
+  document.querySelectorAll('.match-item.term').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  matchSelectedTerm = {idx, el};
+}
+function selectDef(idx, el){
+  if(el.classList.contains('matched') || !matchSelectedTerm) return;
+  if(idx === matchSelectedTerm.idx){
+    playCorrect();
+    el.classList.add('matched'); el.classList.remove('selected');
+    matchSelectedTerm.el.classList.add('matched'); matchSelectedTerm.el.classList.remove('selected');
+    drawMatchLine(matchSelectedTerm.el, el);
+    matchScore += 10; matchSolved++;
+    updateScoreLive();
+    matchSelectedTerm = null;
+    if(matchSolved === matchPairs.length){
+      document.getElementById('b-next-btn').style.display='inline-block';
+    }
+  } else {
+    playWrong();
+    el.classList.add('wrong-flash');
+    setTimeout(()=>el.classList.remove('wrong-flash'), 350);
+    matchSelectedTerm.el.classList.remove('selected');
+    matchSelectedTerm = null;
+  }
+}
+function drawMatchLine(elA, elB){
+  const svg = document.getElementById('match-svg');
+  const wrapRect = document.querySelector('.match-wrap').getBoundingClientRect();
+  const a = elA.getBoundingClientRect();
+  const b = elB.getBoundingClientRect();
+  const x1 = a.right - wrapRect.left, y1 = a.top + a.height/2 - wrapRect.top;
+  const x2 = b.left - wrapRect.left, y2 = b.top + b.height/2 - wrapRect.top;
+  const path = svgNS('path');
+  const midX = (x1+x2)/2;
+  path.setAttribute('d', `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`);
+  path.setAttribute('stroke', '#16A34A');
+  path.setAttribute('stroke-width', '4');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-dasharray', '400');
+  path.setAttribute('stroke-dashoffset', '400');
+  svg.appendChild(path);
+  path.animate([{strokeDashoffset:400},{strokeDashoffset:0}], {duration:450, easing:'ease-out', fill:'forwards'});
+}
+
+function renderTF(){
+  const item = tfStatements[tfIndex];
+  document.getElementById('tf-statement').textContent = item.s;
+}
+function answerTF(val){
+  const item = tfStatements[tfIndex];
+  if(val === item.a){ playCorrect(); tfScore += 10; } else { playWrong(); }
+  updateScoreLive();
+  tfIndex++;
+  if(tfIndex < tfStatements.length){ setTimeout(renderTF, 250); }
+  else{ setTimeout(()=>goRound('d'), 350); }
+}
+
+function renderRecap(){
+  const total = mcScore + matchScore + tfScore;
+  document.getElementById('recap-total').textContent = total;
+  document.getElementById('recap-a').textContent = mcScore + '/30';
+  document.getElementById('recap-b').textContent = matchScore + '/40';
+  document.getElementById('recap-c').textContent = tfScore + '/30';
+}
+
+/* init */
+resetEval();
+</script>
+</body>
+</html>
